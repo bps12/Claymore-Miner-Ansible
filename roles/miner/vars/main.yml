@@ -1,0 +1,6 @@
+---
+
+# Set Claymore destiation file
+claymore_dest_dir: /usr/local/Claymore10
+
+#URLs will be prompted on start

@@ -1,0 +1,58 @@
+---
+
+- name: download Claymore Miner
+  get_url:
+    url: "{{ prompt_url }}"
+    dest: /tmp/
+
+- name: Create Claymore10 directory
+  file:
+    path: {{ claymore_dest_dir }}
+    state: directory
+    owner: root
+    group: root
+
+- name: Unarchive Claymore Miner
+  raw: tar zxvf /tmp/Claymore.s.Dual.Ethereum.Decred_Siacoin_Lbry_Pascal.AMD.NVIDIA.GPU.Miner.v10.0.-.LINUX.tar.gz -C {{claymore_dest_dir}}
+
+- name: add sticky permissions so every user can mine
+  file:
+    path: {{ claymore_dest_dir }}/ethminerdcr64
+    mode: "u+s"
+
+- name: copy claymore scripts
+  copy:
+      src: "{{ item }}"
+      dest: "{{ claymore_dest_dir }}"
+  with_items:
+    - "reboot.sh"
+    - "mine.sh"
+
+- name: add executable permissons on mine.sh and reboot.sh
+  file:
+      src: "{{ claymore_dest_dir }}/{{ item }}"
+      mode: "u+x"
+  with_items:
+    - "reboot.sh"
+    - "mine.sh"
+
+- name: install claymore service
+  include_role:
+    name: systemd-service
+  vars:
+    systemd_service_name: "claymore"
+    systemd_service_envs:
+      - "WORKER={{inventory_hostname_short}}"
+      - "GPU_MAX_ALLOC_PERCENT=100"
+    systemd_service_Unit_Description: Claymore Miner
+    systemd_service_Unit_Requires: network.target
+    systemd_service_Unit_After: network.target
+    systemd_service_Service_ExecStart: "{{claymore_dest_dir}}/mine.sh"
+
+- name: enable claymore service
+  file:
+    src: /etc/systemd/system/claymore.service
+    dest: /etc/systemd/system/multi-user.target.wants/claymore.service
+    owner: root
+    group: root
+    state: link

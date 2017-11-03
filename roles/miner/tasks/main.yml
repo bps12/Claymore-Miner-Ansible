@@ -1,0 +1,5 @@
+---
+
+- include: upgrade.yml
+- include: minedl.yml
+- include: opencl.yml

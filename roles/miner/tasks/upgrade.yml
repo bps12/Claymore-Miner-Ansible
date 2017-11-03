@@ -1,0 +1,14 @@
+- name: Apt update / upgrade
+  apt: upgrade=yes update_cahce=yes
+  become: yes
+
+- name: Install extra packages
+  apt: pkg={{ item }}
+  become: yes
+  with_items:
+    - git
+    - tmux
+    - opencl-headers
+    - htop
+    - screen
+    - openssh-server

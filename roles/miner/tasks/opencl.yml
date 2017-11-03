@@ -1,0 +1,32 @@
+---
+
+- name: Check if amdgpu-pro is installed
+  command: dpkg-query -W amdgpu-pro
+  register: amdgpu_pro_check_deb
+  failed_when: amdgpu_pro_check_deb.rc > 1
+  changed_when: amdgpu_pro_check_deb.rc =
+
+- name: Get openCL drivers
+  get_url:
+    url: {{ prompt_amd_drivers }}
+    dest: /tmp
+
+- name: untar openCL
+  raw: tar -Jxvf amdgpu-pro-17.40-492261.tar.xz
+
+- name: run the script
+  script: /tmp/amdgpu-pro-17.40-492261/amdgpu-pro-install -y
+
+- name: Add permissions for video user
+  raw: sudo usermod -a -G video $LOGNAME
+
+# reboot to apply openCL drivers and wait with the ssh connection
+- name: Reboot the server for kernel update
+  shell: ( sleep 3 && /sbin/reboot & )
+  async: 0
+  poll: 0
+
+- name: Wait for the server to reboot
+  local_action: wait_for host="{{invetory_hostname}}" search_regex=OpenSSH port=22 timeout=300
+
+D
